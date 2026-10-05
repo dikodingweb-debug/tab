@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Dashboard Tabungan Digital">
+  <title>Dashboard — Tabungan Digital</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body>
+  <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Buka menu">☰</button>
+  <div id="mobileNavBackdrop" class="mobile-nav-backdrop"></div>
+  <div class="app-shell">
+    <aside class="sidebar" id="mobileSidebar">
+      <div class="mobile-sidebar-head"><div class="brand">
+        <div class="brand-mark">TD</div>
+        <div><strong>Tabungan</strong><span>Digital</span></div>
+      </div><button id="mobileNavClose" class="mobile-nav-close" type="button" aria-label="Tutup menu">×</button></div>
+      <nav class="side-nav" aria-label="Navigasi utama">
+        <a class="nav-item active" href="dashboard.html"><span class="nav-icon">⌂</span><span><strong>Dashboard</strong><small>Lihat saldo & aktivitas</small></span></a>
+        <button id="accountBtn" class="nav-item nav-button" type="button"><span class="nav-icon">⚙</span><span><strong>Akun & Keamanan</strong><small>Username & password</small></span></button>
+        <button id="priceBtn" class="nav-item nav-button" type="button" hidden><span class="nav-icon">₫</span><span><strong>Atur Harga</strong><small>Tentukan nominal menabung</small></span></button>
+      </nav>
+      <button id="logoutBtn" class="nav-item nav-logout" type="button"><span class="nav-icon">↪</span><span><strong>Keluar</strong><small>Keluar dari akun</small></span></button>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">DASHBOARD</p>
+          <h1 id="greeting">Halo!</h1>
+          <p class="muted">Pantau tabungan dan permintaan persetujuan Anda.</p>
+        </div>
+        <button id="notificationBtn" class="icon-btn notification-trigger" type="button" aria-label="Notifikasi">
+          <span>🔔</span><b id="notificationBadge" class="badge" hidden>0</b>
+        </button>
+      </header>
+
+      <section class="balance-card">
+        <div>
+          <span class="balance-label">Saldo gabungan A + B</span>
+          <strong id="combinedBalanceValue" class="balance-value">Rp 0</strong>
+          <span id="balanceUpdated" class="balance-updated">Memuat saldo…</span>
+        </div>
+        <div class="balance-actions"><div id="savingPriceLabel" class="saving-price-label">Harga menabung: memuat…</div><button id="saveBtn" class="btn btn-light" type="button">＋ Menabung</button></div>
+      </section>
+
+      <section class="personal-balance-card">
+        <div>
+          <span class="balance-label">Tabungan pribadi</span>
+          <strong id="balanceValue" class="personal-balance-value">Rp 0</strong>
+          <span class="muted">Saldo milik akun yang sedang login</span>
+        </div>
+        <div class="personal-balance-icon">💰</div>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">AKTIVITAS</p>
+              <h2>Riwayat transaksi</h2>
+            </div>
+            <button id="refreshBtn" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+          <div id="transactionList" class="transaction-list">
+            <div class="loading-state">Memuat transaksi…</div>
+          </div>
+        </div>
+
+        <aside class="panel approval-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">ACTION REQUIRED</p>
+              <h2>Menunggu approval</h2>
+            </div>
+            <span id="pendingCount" class="count-pill">0</span>
+          </div>
+          <div id="pendingList" class="pending-list">
+            <div class="empty-state">Tidak ada transaksi pending.</div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <!-- QRIS modal -->
+  <div id="qrisModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <section class="modal-card qris-card" role="dialog" aria-modal="true" aria-labelledby="qrisTitle">
+      <p class="eyebrow">MENABUNG</p>
+      <h2 id="qrisTitle">Bayar melalui QRIS</h2>
+      <p class="muted">Scan QRIS berikut menggunakan aplikasi pembayaran Anda. Setelah selesai, lanjutkan konfirmasi.</p>
+      <div class="qris-frame">
+        <img src="assets/qris.png" alt="QRIS pembayaran" onerror="this.style.display='none';document.getElementById('qrisPlaceholder').hidden=false">
+        <div id="qrisPlaceholder" class="qris-placeholder" hidden>qris.png<br><small>Ganti file ini dengan QRIS Anda.</small></div>
+      </div>
+      <div class="payment-info">
+        <span>Tujuan pembayaran</span><strong>Tabungan Digital</strong>
+      </div>
+      <button id="paidBtn" class="btn btn-primary btn-block" type="button">Saya Sudah Membayar</button>
+      <p class="modal-footnote">Jangan tutup proses sebelum mengirim konfirmasi pembayaran.</p>
+    </section>
+  </div>
+
+  <!-- Price modal (User A only) -->
+  <div id="priceModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="priceTitle">
+      <button class="modal-close" data-close="priceModal" type="button" aria-label="Tutup">×</button>
+      <p class="eyebrow">KHUSUS USER A</p>
+      <h2 id="priceTitle">Atur harga menabung</h2>
+      <p class="muted">Nominal ini akan menjadi nominal pembayaran otomatis untuk semua pengguna.</p>
+      <form id="priceForm" class="form-stack">
+        <label>Harga menabung
+          <div class="money-input"><span>Rp</span><input id="priceInput" inputmode="numeric" required placeholder="100.000"></div>
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">Simpan harga</button>
+      </form>
+    </section>
+  </div>
+
+  <!-- Amount modal -->
+  <div id="amountModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="amountTitle">
+      <button class="modal-close" data-close="amountModal" type="button" aria-label="Tutup">×</button>
+      <p class="eyebrow">KONFIRMASI</p>
+      <h2 id="amountTitle">Konfirmasi pembayaran</h2>
+      <p class="muted">Nominal tidak perlu diisi manual. Sistem menggunakan harga aktif yang ditetapkan User A.</p>
+      <div class="auto-price-box"><span>Nominal pembayaran</span><strong id="autoAmountValue">Rp 0</strong></div>
+      <form id="amountForm" class="form-stack">
+        <button class="btn btn-primary btn-block" type="submit">Kirim Konfirmasi</button>
+      </form>
+    </section>
+  </div>
+
+  <!-- Approval detail modal -->
+  <div id="approvalModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="approvalTitle">
+      <button class="modal-close" data-close="approvalModal" type="button" aria-label="Tutup">×</button>
+      <p class="eyebrow">PERMINTAAN APPROVAL</p>
+      <h2 id="approvalTitle">Detail transaksi</h2>
+      <div id="approvalDetails" class="detail-list"></div>
+      <div class="approval-actions">
+        <button id="rejectBtn" class="btn btn-danger" type="button">Tolak</button>
+        <button id="approveBtn" class="btn btn-primary" type="button">Approve</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Notifications -->
+  <div id="notificationPanel" class="notification-panel" aria-hidden="true">
+    <div class="panel-head">
+      <div><p class="eyebrow">NOTIFIKASI</p><h2>Pemberitahuan</h2></div>
+      <div class="notification-head-actions"><button id="deleteAllNotifications" class="btn btn-ghost btn-small" type="button">Hapus semua</button><button id="closeNotifications" class="modal-close" type="button" aria-label="Tutup">×</button></div>
+    </div>
+    <div id="notificationList" class="notification-list"></div>
+  </div>
+
+
+  <!-- Account modal -->
+  <div id="accountModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+      <button class="modal-close" data-close="accountModal" type="button" aria-label="Tutup">×</button>
+      <p class="eyebrow">AKUN & KEAMANAN</p>
+      <h2 id="accountTitle">Ubah username / password</h2>
+      <p class="muted">Kosongkan field yang tidak ingin diubah. Password saat ini wajib untuk menyimpan perubahan.</p>
+      <form id="accountForm" class="form-stack">
+        <label>Username baru <input id="newUsernameInput" autocomplete="username" placeholder="contoh: usera" minlength="3" maxlength="30"></label>
+        <label>Password baru <input id="newPasswordInput" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter" minlength="8"></label>
+        <label>Konfirmasi password baru <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="Ulangi password baru"></label>
+        <label>Password saat ini <input id="currentPasswordInput" type="password" autocomplete="current-password" required placeholder="Masukkan password saat ini"></label>
+        <button class="btn btn-primary btn-block" type="submit">Simpan perubahan</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

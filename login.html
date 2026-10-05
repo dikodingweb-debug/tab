@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Login Tabungan Digital">
+  <title>Masuk — Tabungan Digital</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-card" aria-labelledby="login-title">
+      <div class="brand-mark">TD</div>
+      <p class="eyebrow">TABUNGAN DIGITAL</p>
+      <h1 id="login-title">Selamat datang kembali</h1>
+      <p class="muted">Masuk untuk mengelola tabungan dan transaksi Anda.</p>
+
+      <form id="loginForm" class="form-stack" novalidate>
+        <label>
+          Username
+          <input id="username" name="username" autocomplete="username" required placeholder="contoh: usera">
+        </label>
+        <label>
+          Password
+          <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Masukkan password">
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">Masuk</button>
+        <p id="loginError" class="form-error" role="alert" hidden></p>
+      </form>
+
+      <div class="prototype-note">
+        <strong>Prototype</strong>
+        <span>API Google Apps Script belum dikonfigurasi? Atur <code>API_URL</code> di <code>js/config.js</code>.</span>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>

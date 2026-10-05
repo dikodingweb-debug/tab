@@ -1,0 +1,59 @@
+@media (max-width: 980px) {
+  .sidebar { width: 220px; padding: 20px 14px; }
+  .main-content { padding: 28px; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .app-shell { display: block; }
+  .mobile-menu-btn {
+    display:grid; place-items:center; position:fixed; z-index:80; top:14px; left:14px;
+    width:44px; height:44px; border:1px solid rgba(255,255,255,.12); border-radius:14px;
+    background:#0f201b; color:#fff; box-shadow:0 10px 28px rgba(0,0,0,.16); font-size:1.25rem;
+  }
+  .mobile-nav-backdrop {
+    position:fixed; inset:0; z-index:70; background:rgba(6,14,11,.52);
+    backdrop-filter:blur(3px); display:none;
+  }
+  body.mobile-nav-open .mobile-nav-backdrop { display:block; }
+  .sidebar {
+    position:fixed; z-index:75; top:0; bottom:0; left:0; right:auto;
+    width:min(320px,88vw); height:100vh; padding:20px 16px 18px;
+    border-radius:0 24px 24px 0; transform:translateX(-105%); transition:transform .28s ease;
+    box-shadow:18px 0 50px rgba(0,0,0,.24); align-items:stretch; gap:24px;
+    overflow-y:auto;
+  }
+  body.mobile-nav-open .sidebar { transform:translateX(0); }
+  .mobile-sidebar-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .brand { display:flex; }
+  .brand > div:last-child { display:grid; }
+  .mobile-nav-close {
+    width:42px; height:42px; flex:0 0 42px; border:1px solid rgba(255,255,255,.14);
+    border-radius:12px; background:rgba(255,255,255,.08); color:#fff; font-size:1.5rem; line-height:1;
+  }
+  .side-nav { display:grid; gap:8px; }
+  .side-nav .nav-item, .nav-logout {
+    width:100%; min-height:62px; height:auto; padding:12px 13px; display:flex;
+    align-items:center; gap:12px; font-size:.92rem; border-radius:15px;
+  }
+  .nav-item > span:last-child { display:grid; gap:3px; text-align:left; }
+  .nav-item strong { color:#fff; font-size:.9rem; }
+  .nav-item small { color:#a9c0b8; font-size:.72rem; line-height:1.3; }
+  .nav-icon {
+    width:40px; height:40px; flex:0 0 40px; display:grid; place-items:center;
+    border-radius:12px; background:rgba(255,255,255,.08); color:#fff; font-size:1.05rem;
+  }
+  .nav-item.active { background:rgba(255,255,255,.11); }
+  .nav-item.active .nav-icon { background:rgba(255,255,255,.15); }
+  .nav-logout { margin-top:auto; background:rgba(255,255,255,.06); }
+  .main-content { padding:78px 16px 28px; }
+  .topbar { margin-bottom:20px; }
+  .topbar > div { padding-left:52px; }
+  .balance-card { min-height:230px; padding:24px; }
+  .balance-actions { align-items:stretch; min-width:0; }
+  .saving-price-label { text-align:center; }
+  .notification-panel { top:12px; right:12px; width:calc(100vw - 24px); max-height:calc(100vh - 24px); padding:16px; border-radius:18px; }
+  .notification-head-actions { gap:5px; }
+  .notification-head-actions .btn-small { padding:7px 8px; }
+}
+@media (max-width:680px) { .mobile-nav-close { display:grid; place-items:center; } }
