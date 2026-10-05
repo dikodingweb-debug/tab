@@ -100,7 +100,7 @@
       <h2 id="qrisTitle">Bayar melalui QRIS</h2>
       <p class="muted">Scan QRIS berikut menggunakan aplikasi pembayaran Anda. Setelah selesai, lanjutkan konfirmasi.</p>
       <div class="qris-frame">
-        <img src="assets/qris.png" alt="QRIS pembayaran" onerror="this.style.display='none';document.getElementById('qrisPlaceholder').hidden=false">
+        <img src="qris.png" alt="QRIS pembayaran" onerror="this.style.display='none';document.getElementById('qrisPlaceholder').hidden=false">
         <div id="qrisPlaceholder" class="qris-placeholder" hidden>qris.png<br><small>Ganti file ini dengan QRIS Anda.</small></div>
       </div>
       <div class="payment-info">
@@ -175,12 +175,12 @@
       <button class="modal-close" data-close="accountModal" type="button" aria-label="Tutup">×</button>
       <p class="eyebrow">AKUN & KEAMANAN</p>
       <h2 id="accountTitle">Ubah username / password</h2>
-      <p class="muted">Kosongkan field yang tidak ingin diubah. Password saat ini wajib untuk menyimpan perubahan.</p>
+      <p class="muted">Ganti Password dengan Bijak, Karena Password Anda adalah kunci utama untuk mengamankan akun Anda.</p>
       <form id="accountForm" class="form-stack">
-        <label>Username baru <input id="newUsernameInput" autocomplete="username" placeholder="contoh: usera" minlength="3" maxlength="30"></label>
+        <label>Username baru <input id="newUsernameInput" autocomplete="username" placeholder="Username Baru" minlength="3" maxlength="30"></label>
         <label>Password baru <input id="newPasswordInput" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter" minlength="8"></label>
         <label>Konfirmasi password baru <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="Ulangi password baru"></label>
-        <label>Password saat ini <input id="currentPasswordInput" type="password" autocomplete="current-password" required placeholder="Masukkan password saat ini"></label>
+        <label>Password saat ini <input id="currentPasswordInput" type="password" autocomplete="current-password" required placeholder="Masukkan password Lama"></label>
         <button class="btn btn-primary btn-block" type="submit">Simpan perubahan</button>
       </form>
     </section>
