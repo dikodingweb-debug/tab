@@ -1,194 +1,203 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Dashboard Tabungan Digital">
-  <title>Dashboard — Tabungan Digital</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="responsive.css">
-</head>
-<body>
-  <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-label="Buka menu">☰</button>
-  <div id="mobileNavBackdrop" class="mobile-nav-backdrop"></div>
-  <div class="app-shell">
-    <aside class="sidebar" id="mobileSidebar">
-      <div class="mobile-sidebar-head"><div class="brand">
-        <div class="brand-mark">TD</div>
-        <div><strong>Tabungan</strong><span>Digital</span></div>
-      </div><button id="mobileNavClose" class="mobile-nav-close" type="button" aria-label="Tutup menu">×</button></div>
-      <nav class="side-nav" aria-label="Navigasi utama">
-        <a class="nav-item active" href="dashboard.html"><span class="nav-icon">⌂</span><span><strong>Dashboard</strong><small>Lihat saldo & aktivitas</small></span></a>
-        <button id="accountBtn" class="nav-item nav-button" type="button"><span class="nav-icon">⚙</span><span><strong>Akun & Keamanan</strong><small>Username & password</small></span></button>
-        <button id="priceBtn" class="nav-item nav-button" type="button" hidden><span class="nav-icon">₫</span><span><strong>Atur Harga</strong><small>Tentukan nominal menabung</small></span></button>
-      </nav>
-      <button id="logoutBtn" class="nav-item nav-logout" type="button"><span class="nav-icon">↪</span><span><strong>Keluar</strong><small>Keluar dari akun</small></span></button>
-    </aside>
+(() => {
+  let token = sessionStorage.getItem("td_session_token");
+  let state = { user:null, combinedBalance:0, savingPrice:0, canManagePrice:false, transactions:[], pending:[], notifications:[], pendingPayment:null, selected:null };
+  let pollTimer = null;
+  const $ = id => document.getElementById(id);
+  const rupiah = n => new Intl.NumberFormat("id-ID", {style:"currency", currency:"IDR", maximumFractionDigits:0}).format(Number(n||0));
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+  const dateText = v => v ? new Date(v).toLocaleString("id-ID", {dateStyle:"medium", timeStyle:"short"}) : "—";
+  const toast = msg => { const el=$("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(window.__toast); window.__toast=setTimeout(()=>el.classList.remove("show"),2800); };
+  const openModal = id => { const el=$(id); if(!el)return; el.classList.add("open"); el.setAttribute("aria-hidden","false"); };
+  const closeModal = id => { const el=$(id); if(!el)return; el.classList.remove("open"); el.setAttribute("aria-hidden","true"); };
+  const setLoading = on => document.body.classList.toggle("data-loading", !!on);
 
-    <main class="main-content">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">DASHBOARD</p>
-          <h1 id="greeting">Halo!</h1>
-          <p class="muted">Pantau Tugas Harian Menabung mu.</p>
-        </div>
-        <button id="notificationBtn" class="icon-btn notification-trigger" type="button" aria-label="Notifikasi">
-          <span>🔔</span><b id="notificationBadge" class="badge" hidden>0</b>
-        </button>
-      </header>
+  async function boot(){
+    if(!token) return location.href="login.html";
+    bindEvents();
+    try {
+      // Gunakan data bootstrap dari login bila tersedia agar dashboard tidak langsung membuat request kedua.
+      const bootstrapRaw=sessionStorage.getItem("td_dashboard_bootstrap");
+      if(bootstrapRaw){
+        sessionStorage.removeItem("td_dashboard_bootstrap");
+        applyDashboardData(JSON.parse(bootstrapRaw));
+        render();
+      } else {
+        await refresh(false);
+      }
+      if(state.pendingPayment) openModal("qrisModal");
+      startPolling();
+    } catch(err){ toast(err.message); if(/token|session|login/i.test(err.message)) logout(); }
+  }
 
-      <section class="balance-card">
-        <div>
-          <span class="balance-label">Total Saldo Umum</span>
-          <strong id="combinedBalanceValue" class="balance-value">Rp 0</strong>
-          <span id="balanceUpdated" class="balance-updated">Memuat saldo…</span>
-        </div>
-        <div class="balance-actions"><div id="savingPriceLabel" class="saving-price-label">Harga menabung: memuat…</div><button id="saveBtn" class="btn btn-light" type="button">＋ Menabung</button></div>
-      </section>
+  function bindEvents(){
+    $("logoutBtn").onclick=logout;
+    $("accountBtn").onclick=()=>{closeMobileNav();openModal("accountModal");};
+    $("priceBtn").onclick=()=>{closeMobileNav();$("priceInput").value=state.savingPrice||"";openModal("priceModal");};
+    $("refreshBtn").onclick=()=>refresh(true);
+    $("saveBtn").onclick=()=>openModal("qrisModal");
+    $("paidBtn").onclick=()=>{closeModal("qrisModal");renderAutoAmount();openModal("amountModal");};
+    $("amountForm").onsubmit=submitAmount;
+    $("priceForm").onsubmit=submitPrice;
+    $("notificationBtn").onclick=toggleNotifications;
+    $("closeNotifications").onclick=()=>$("notificationPanel").classList.remove("open");
+    $("deleteAllNotifications").onclick=deleteAllNotifications;
+    $("mobileMenuBtn").onclick=toggleMobileNav;
+    $("mobileNavClose").onclick=closeMobileNav;
+    $("mobileNavBackdrop").onclick=closeMobileNav;
+    document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
+    $("approveBtn").onclick=()=>processApproval("approve");
+    $("rejectBtn").onclick=()=>processApproval("reject");
+    $("accountForm").onsubmit=submitAccountChanges;
+    const today=new Date();
+    const currentMonth=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}`;
+    ["transactionMonth","pendingMonth"].forEach(id=>$(id).value=currentMonth);
+    $("transactionMonth").onchange=()=>updateDateBounds("transactionMonth","transactionDate");
+    $("pendingMonth").onchange=()=>updateDateBounds("pendingMonth","pendingDate");
+    ["transactionDate","pendingDate"].forEach(id=>$(id).onchange=renderActivityLists);
+    updateDateBounds("transactionMonth","transactionDate");
+    updateDateBounds("pendingMonth","pendingDate");
+  }
 
-      <section class="personal-balance-card">
-        <div>
-          <span class="balance-label">Tabungan pribadi</span>
-          <strong id="balanceValue" class="personal-balance-value">Rp 0</strong>
-          <span class="muted">Dapat di cairkan secara Langsung</span>
-        </div>
-      </section>
+  function applyDashboardData(data){
+    state.user=data.user; state.combinedBalance=Number(data.combinedBalance||0); state.savingPrice=Number(data.savingPrice||0);
+    state.canManagePrice=!!data.canManagePrice; state.transactions=data.transactions||[]; state.pending=data.pending||[]; state.notifications=data.notifications||[];
+    state.pendingPayment=data.pendingPayment||null;
+  }
 
-      <section class="dashboard-grid">
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">AKTIVITAS</p>
-              <h2>Riwayat transaksi</h2>
-            </div>
-            <button id="refreshBtn" class="btn btn-ghost" type="button">Refresh</button>
-          </div>
-          <div class="activity-filters" aria-label="Filter riwayat transaksi">
-            <label>Bulan<input id="transactionMonth" type="month" aria-label="Pilih bulan riwayat transaksi"></label>
-            <label>Tanggal<input id="transactionDate" type="date" aria-label="Pilih tanggal riwayat transaksi"></label>
-          </div>
-          <div id="transactionList" class="transaction-list">
-            <div class="loading-state">Memuat transaksi…</div>
-          </div>
-        </div>
+  async function refresh(showToast=false){
+    setLoading(true);
+    try{
+      const data=await API.getDashboard(token);
+      applyDashboardData(data);
+      render(); if(showToast)toast("Data diperbarui.");
+    } finally { setLoading(false); }
+  }
 
-        <aside class="panel approval-panel">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">ACTION REQUIRED</p>
-              <h2>Menunggu approval</h2>
-            </div>
-            <span id="pendingCount" class="count-pill">0</span>
-          </div>
-          <div class="activity-filters" aria-label="Filter transaksi menunggu approval">
-            <label>Bulan<input id="pendingMonth" type="month" aria-label="Pilih bulan transaksi menunggu approval"></label>
-            <label>Tanggal<input id="pendingDate" type="date" aria-label="Pilih tanggal transaksi menunggu approval"></label>
-          </div>
-          <div id="pendingList" class="pending-list">
-            <div class="empty-state">Tidak ada transaksi pending.</div>
-          </div>
-        </aside>
-      </section>
-    </main>
-  </div>
+  function startPolling(){
+    clearInterval(pollTimer);
+    pollTimer=setInterval(async()=>{ if(document.hidden)return; try{await refresh(false);}catch(_){} }, window.APP_CONFIG?.POLL_MS||120000);
+  }
 
-  <!-- QRIS modal -->
-  <div id="qrisModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop"></div>
-    <section class="modal-card qris-card" role="dialog" aria-modal="true" aria-labelledby="qrisTitle">
-      <p class="eyebrow">MENABUNG</p>
-      <h2 id="qrisTitle">Bayar melalui QRIS</h2>
-      <p class="muted">Scan QRIS berikut menggunakan aplikasi pembayaran Anda. Setelah selesai, lanjutkan konfirmasi.</p>
-      <div class="qris-frame">
-        <img src="assets/qris.png" alt="QRIS pembayaran" onerror="this.style.display='none';document.getElementById('qrisPlaceholder').hidden=false">
-        <div id="qrisPlaceholder" class="qris-placeholder" hidden>qris.png<br><small>Ganti file ini dengan QRIS Anda.</small></div>
-      </div>
-      <div class="payment-info">
-        <span>Tujuan pembayaran</span><strong>Tabungan Digital</strong>
-      </div>
-      <button id="paidBtn" class="btn btn-primary btn-block" type="button">Saya Sudah Membayar</button>
-      <p class="modal-footnote">Jangan tutup proses sebelum mengirim konfirmasi pembayaran.</p>
-    </section>
-  </div>
+  function render(){
+    $("greeting").textContent=`Halo, ${state.user.display_name}`;
+    $("combinedBalanceValue").textContent=rupiah(state.combinedBalance);
+    $("balanceValue").textContent=rupiah(state.user.balance);
+    $("balanceUpdated").textContent=`Terakhir diperbarui ${new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}`;
+    $("pendingCount").textContent=state.pending.length;
+    $("savingPriceLabel").textContent=state.savingPrice>0?`Harga menabung: ${rupiah(state.savingPrice)}`:"Harga menabung belum diatur";
+    $("priceBtn").hidden=!state.canManagePrice;
+    $("notificationBadge").hidden=state.notifications.filter(n=>!n.is_read).length===0;
+    $("notificationBadge").textContent=state.notifications.filter(n=>!n.is_read).length;
+    renderAutoAmount(); renderActivityLists(); renderNotifications();
+  }
 
-  <!-- Price modal (User A only) -->
-  <div id="priceModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop"></div>
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="priceTitle">
-      <button class="modal-close" data-close="priceModal" type="button" aria-label="Tutup">×</button>
-      <p class="eyebrow">KHUSUS USER A</p>
-      <h2 id="priceTitle">Atur harga menabung</h2>
-      <p class="muted">Nominal ini akan menjadi nominal pembayaran otomatis untuk semua pengguna.</p>
-      <form id="priceForm" class="form-stack">
-        <label>Harga menabung
-          <div class="money-input"><span>Rp</span><input id="priceInput" inputmode="numeric" required placeholder="100.000"></div>
-        </label>
-        <button class="btn btn-primary btn-block" type="submit">Simpan harga</button>
-      </form>
-    </section>
-  </div>
+  function renderAutoAmount(){ $("autoAmountValue").textContent=state.savingPrice>0?rupiah(state.savingPrice):"Harga belum diatur"; }
 
-  <!-- Amount modal -->
-  <div id="amountModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop"></div>
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="amountTitle">
-      <button class="modal-close" data-close="amountModal" type="button" aria-label="Tutup">×</button>
-      <p class="eyebrow">KONFIRMASI</p>
-      <h2 id="amountTitle">Konfirmasi pembayaran</h2>
-      <p class="muted">Nominal tidak perlu diisi manual. Sistem menggunakan harga aktif yang ditetapkan User A.</p>
-      <div class="auto-price-box"><span>Nominal pembayaran</span><strong id="autoAmountValue">Rp 0</strong></div>
-      <form id="amountForm" class="form-stack">
-        <button class="btn btn-primary btn-block" type="submit">Kirim Konfirmasi</button>
-      </form>
-    </section>
-  </div>
+  function updateDateBounds(monthId,dateId){
+    const month=$(monthId).value;
+    const date=$(dateId);
+    date.min=month?`${month}-01`:"";
+    const lastDay=month?new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate():0;
+    date.max=month?`${month}-${String(lastDay).padStart(2,"0")}`:"";
+    if(date.value && month && !date.value.startsWith(`${month}-`))date.value="";
+    renderActivityLists();
+  }
 
-  <!-- Approval detail modal -->
-  <div id="approvalModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop"></div>
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="approvalTitle">
-      <button class="modal-close" data-close="approvalModal" type="button" aria-label="Tutup">×</button>
-      <p class="eyebrow">PERMINTAAN APPROVAL</p>
-      <h2 id="approvalTitle">Detail transaksi</h2>
-      <div id="approvalDetails" class="detail-list"></div>
-      <div class="approval-actions">
-        <button id="rejectBtn" class="btn btn-danger" type="button">Tolak</button>
-        <button id="approveBtn" class="btn btn-primary" type="button">Approve</button>
-      </div>
-    </section>
-  </div>
+  function matchesActivityDate(value,month,date){
+    if(!value)return false;
+    const parsed=new Date(value);
+    if(Number.isNaN(parsed.getTime()))return false;
+    const monthKey=`${parsed.getFullYear()}-${String(parsed.getMonth()+1).padStart(2,"0")}`;
+    const dateKey=`${monthKey}-${String(parsed.getDate()).padStart(2,"0")}`;
+    return (!month || monthKey===month) && (!date || dateKey===date);
+  }
 
-  <!-- Notifications -->
-  <div id="notificationPanel" class="notification-panel" aria-hidden="true">
-    <div class="panel-head">
-      <div><p class="eyebrow">NOTIFIKASI</p><h2>Pemberitahuan</h2></div>
-      <div class="notification-head-actions"><button id="deleteAllNotifications" class="btn btn-ghost btn-small" type="button">Hapus semua</button><button id="closeNotifications" class="modal-close" type="button" aria-label="Tutup">×</button></div>
-    </div>
-    <div id="notificationList" class="notification-list"></div>
-  </div>
+  function renderActivityLists(){ renderTransactions(); renderPending(); }
 
+  function renderTransactions(){
+    const el=$("transactionList");
+    if(!state.transactions.length)return el.innerHTML='<div class="empty-state">Belum ada transaksi.</div>';
+    const month=$("transactionMonth").value, date=$("transactionDate").value;
+    const filtered=state.transactions.filter(t=>matchesActivityDate(t.created_at,month,date));
+    if(!filtered.length)return el.innerHTML='<div class="empty-state">Tidak ada transaksi pada periode ini.</div>';
+    el.innerHTML=filtered.map(t=>`<article class="transaction-row"><div><div class="transaction-title">Menabung · ${esc(t.sender_name)}</div><div class="transaction-meta">${esc(t.transaction_id)} · ${dateText(t.created_at)}</div><span class="status status-${String(t.status).toLowerCase()}">${esc(t.status)}</span></div><div class="amount">${rupiah(t.amount)}</div></article>`).join("");
+  }
 
-  <!-- Account modal -->
-  <div id="accountModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop"></div>
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
-      <button class="modal-close" data-close="accountModal" type="button" aria-label="Tutup">×</button>
-      <p class="eyebrow">AKUN & KEAMANAN</p>
-      <h2 id="accountTitle">Ubah username / password</h2>
-      <p class="muted">Ganti Password dengan Bijak, Karena Password Anda adalah kunci utama untuk mengamankan akun Anda.</p>
-      <form id="accountForm" class="form-stack">
-        <label>Username baru <input id="newUsernameInput" autocomplete="username" placeholder="Username Baru" minlength="3" maxlength="30"></label>
-        <label>Password baru <input id="newPasswordInput" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter" minlength="8"></label>
-        <label>Konfirmasi password baru <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="Ulangi password baru"></label>
-        <label>Password saat ini <input id="currentPasswordInput" type="password" autocomplete="current-password" required placeholder="Masukkan password Lama"></label>
-        <button class="btn btn-primary btn-block" type="submit">Simpan perubahan</button>
-      </form>
-    </section>
-  </div>
+  function renderPending(){
+    const el=$("pendingList"); if(!state.pending.length)return el.innerHTML='<div class="empty-state">Tidak ada transaksi pending.</div>';
+    const month=$("pendingMonth").value, date=$("pendingDate").value;
+    const filtered=state.pending.filter(t=>matchesActivityDate(t.created_at,month,date));
+    if(!filtered.length)return el.innerHTML='<div class="empty-state">Tidak ada approval pada periode ini.</div>';
+    el.innerHTML=filtered.map(t=>`<article class="pending-item" data-id="${esc(t.transaction_id)}"><strong>${esc(t.sender_name)} → Anda</strong><span class="amount">${rupiah(t.amount)}</span><div class="transaction-meta">${dateText(t.created_at)}</div></article>`).join("");
+    el.querySelectorAll(".pending-item").forEach(x=>x.onclick=()=>showApproval(x.dataset.id));
+  }
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="config.js"></script>
-  <script src="api.js"></script>
-  <script src="dashboard.js"></script>
-</body>
-</html>
+  function renderNotifications(){
+    const el=$("notificationList");
+    if(!state.notifications.length)return el.innerHTML='<div class="empty-state">Belum ada notifikasi.</div>';
+    el.innerHTML=state.notifications.map(n=>`<article class="notification-item ${n.is_read?"":"unread"}" data-notif="${esc(n.notification_id)}"><div class="notification-content"><strong>${esc(n.title)}</strong><p>${esc(n.message)}</p><time>${dateText(n.created_at)}</time></div><button class="notification-delete" type="button" title="Hapus" aria-label="Hapus notifikasi" data-delete-notif="${esc(n.notification_id)}">×</button></article>`).join("");
+    el.querySelectorAll("[data-delete-notif]").forEach(btn=>btn.onclick=async e=>{e.stopPropagation();await deleteNotification(btn.dataset.deleteNotif);});
+    el.querySelectorAll(".notification-item").forEach(item=>item.onclick=async()=>{
+      const id=item.dataset.notif; const target=state.notifications.find(n=>n.notification_id===id);
+      if(target && !target.is_read){ target.is_read=true; render(); try{await API.markNotificationRead(token,id);}catch(e){toast(e.message);await refresh(false);} }
+    });
+  }
+
+  function toggleNotifications(){ $("notificationPanel").classList.toggle("open"); }
+
+  async function deleteNotification(id){
+    try{await API.deleteNotification(token,id);state.notifications=state.notifications.filter(n=>n.notification_id!==id);render();toast("Notifikasi dihapus.");}
+    catch(e){toast(e.message);}
+  }
+  async function deleteAllNotifications(){
+    if(!state.notifications.length)return toast("Tidak ada notifikasi untuk dihapus.");
+    if(!confirm("Hapus semua notifikasi Anda?"))return;
+    try{await API.deleteAllNotifications(token);state.notifications=[];render();toast("Semua notifikasi dihapus.");}
+    catch(e){toast(e.message);}
+  }
+
+  function showApproval(id){
+    state.selected=state.pending.find(t=>t.transaction_id===id); if(!state.selected)return;
+    const t=state.selected;
+    $("approvalDetails").innerHTML=`<div class="detail-line"><span>ID transaksi</span><strong>${esc(t.transaction_id)}</strong></div><div class="detail-line"><span>Pengirim</span><strong>${esc(t.sender_name)}</strong></div><div class="detail-line"><span>Nominal</span><strong>${rupiah(t.amount)}</strong></div><div class="detail-line"><span>Waktu</span><strong>${dateText(t.created_at)}</strong></div><div class="detail-line"><span>Status</span><strong>${esc(t.status)}</strong></div>`;
+    openModal("approvalModal");
+  }
+
+  async function processApproval(kind){
+    if(!state.selected)return; const id=state.selected.transaction_id; const button=kind==="approve"?$("approveBtn"):$("rejectBtn"); button.disabled=true;
+    try{ if(kind==="approve"){await API.approveTransaction(token,id);toast("Transaksi berhasil di-approve.");}else{const reason=prompt("Alasan penolakan (opsional):")||"Ditolak oleh approver.";await API.rejectTransaction(token,id,reason);toast("Transaksi ditolak.");} closeModal("approvalModal");state.selected=null;await refresh(false); }
+    catch(e){toast(e.message);} finally{button.disabled=false;}
+  }
+
+  async function submitPrice(event){
+    event.preventDefault(); const amount=Number($("priceInput").value.replace(/\D/g,"")); if(!Number.isSafeInteger(amount)||amount<=0)return toast("Harga harus lebih dari Rp0.");
+    const button=event.submitter;button.disabled=true;
+    try{const result=await API.setSavingPrice(token,amount);state.savingPrice=Number(result.savingPrice);closeModal("priceModal");render();toast(result.message||"Harga diperbarui.");}
+    catch(e){toast(e.message);} finally{button.disabled=false;}
+  }
+
+  async function submitAccountChanges(event){
+    event.preventDefault(); const newUsername=$("newUsernameInput").value.trim().toLowerCase(),newPassword=$("newPasswordInput").value,confirmPassword=$("confirmPasswordInput").value,currentPassword=$("currentPasswordInput").value;
+    if(!newUsername&&!newPassword)return toast("Isi username baru atau password baru.");
+    if(newPassword!==confirmPassword)return toast("Konfirmasi password baru tidak cocok.");
+    if(newPassword&&newPassword.length<8)return toast("Password baru minimal 8 karakter.");
+    if(newUsername&&!/^[a-z0-9._-]{3,30}$/.test(newUsername))return toast("Username 3-30 karakter dan hanya boleh huruf kecil, angka, titik, garis bawah, atau strip.");
+    const button=event.submitter;button.disabled=true;
+    try{const result=await API.updateCredentials(token,currentPassword,newUsername,newPassword);state.user=result.user;["newUsernameInput","newPasswordInput","confirmPasswordInput","currentPasswordInput"].forEach(id=>$(id).value="");closeModal("accountModal");render();toast(result.message||"Data akun berhasil diperbarui.");}
+    catch(e){toast(e.message);} finally{button.disabled=false;}
+  }
+
+  async function submitAmount(event){
+    event.preventDefault(); if(!state.savingPrice)return toast("User A belum mengatur harga menabung.");
+    const button=event.submitter;button.disabled=true;
+    try{const result=await API.createTransaction(token);closeModal("amountModal");state.pendingPayment=null;toast(result.message||"Konfirmasi dikirim.");await refresh(false);}
+    catch(e){toast(e.message);} finally{button.disabled=false;}
+  }
+
+  function toggleMobileNav(){document.body.classList.toggle("mobile-nav-open");}
+  function closeMobileNav(){document.body.classList.remove("mobile-nav-open");}
+  function logout(){sessionStorage.removeItem("td_session_token");clearInterval(pollTimer);location.href="login.html";}
+
+  document.addEventListener("visibilitychange",async()=>{ if(!document.hidden && token){ /* Tidak refresh otomatis saat kembali ke tab; polling tetap 120 detik. */ } });
+  boot();
+})();

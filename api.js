@@ -3,13 +3,25 @@
   const config = window.APP_CONFIG || {};
   async function request(action, payload = {}) {
     if (!config.API_URL || config.API_URL.includes("PASTE_YOUR")) throw new Error("API_URL belum dikonfigurasi di js/config.js");
-    const response = await fetch(config.API_URL, {
-      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action, ...payload }), redirect: "follow"
-    });
-    const data = await response.json();
-    if (!data.ok) throw new Error(data.message || "Request gagal.");
-    return data;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), config.API_TIMEOUT_MS || 20000);
+    try {
+      const response = await fetch(config.API_URL, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, ...payload }), redirect: "follow",
+        signal: controller.signal
+      });
+      const data = await response.json();
+      if (!data.ok) throw new Error(data.message || "Request gagal.");
+      return data;
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Server terlalu lama merespons. Periksa koneksi internet lalu coba lagi.");
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
   window.API = {
     login: (username, password) => request("login", { username, password }),
