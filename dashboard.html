@@ -50,9 +50,8 @@
         <div>
           <span class="balance-label">Tabungan pribadi</span>
           <strong id="balanceValue" class="personal-balance-value">Rp 0</strong>
-          <span class="muted">Saldo milik akun yang sedang login</span>
+          <span class="muted">Dapat di cairkan secara Langsung</span>
         </div>
-        <div class="personal-balance-icon">💰</div>
       </section>
 
       <section class="dashboard-grid">
@@ -63,6 +62,10 @@
               <h2>Riwayat transaksi</h2>
             </div>
             <button id="refreshBtn" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+          <div class="activity-filters" aria-label="Filter riwayat transaksi">
+            <label>Bulan<input id="transactionMonth" type="month" aria-label="Pilih bulan riwayat transaksi"></label>
+            <label>Tanggal<input id="transactionDate" type="date" aria-label="Pilih tanggal riwayat transaksi"></label>
           </div>
           <div id="transactionList" class="transaction-list">
             <div class="loading-state">Memuat transaksi…</div>
@@ -76,6 +79,10 @@
               <h2>Menunggu approval</h2>
             </div>
             <span id="pendingCount" class="count-pill">0</span>
+          </div>
+          <div class="activity-filters" aria-label="Filter transaksi menunggu approval">
+            <label>Bulan<input id="pendingMonth" type="month" aria-label="Pilih bulan transaksi menunggu approval"></label>
+            <label>Tanggal<input id="pendingDate" type="date" aria-label="Pilih tanggal transaksi menunggu approval"></label>
           </div>
           <div id="pendingList" class="pending-list">
             <div class="empty-state">Tidak ada transaksi pending.</div>
