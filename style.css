@@ -45,6 +45,8 @@ input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-
 .btn-danger { color: var(--danger); background: var(--danger-soft); }
 .btn-block { width: 100%; }
 .form-error { color: var(--danger); font-size: .85rem; }
+.passkey-actions { display: grid; gap: 10px; margin-top: 18px; }
+.passkey-actions .muted { margin: 0; font-size: .78rem; }
 .prototype-note { margin-top: 22px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: .78rem; line-height: 1.5; }
 .prototype-note strong { color: var(--text); margin-right: 4px; }
 .app-shell { display: flex; min-height: 100vh; }

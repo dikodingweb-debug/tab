@@ -25,6 +25,7 @@
   }
   window.API = {
     login: (username, password) => request("login", { username, password }),
+    loginPasskey: (ticket) => request("loginPasskey", { ticket }),
     getDashboard: (token) => request("getDashboard", { token }),
     getPendingPayment: (token) => request("getPendingPayment", { token }),
     createTransaction: (token) => request("createTransaction", { token }),

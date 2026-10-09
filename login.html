@@ -28,12 +28,18 @@
         <button class="btn btn-primary btn-block" type="submit">Masuk</button>
         <p id="loginError" class="form-error" role="alert" hidden></p>
       </form>
+      <div class="passkey-actions">
+        <button id="passkeyLoginBtn" class="btn btn-ghost btn-block" type="button">Masuk dengan sidik jari</button>
+        <button id="passkeySetupBtn" class="btn btn-ghost btn-block" type="button">Aktifkan sidik jari di perangkat ini</button>
+        <p id="passkeyHint" class="muted" role="status"></p>
+      </div>
     </section>
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="config.js"></script>
   <script src="api.js"></script>
+  <script src="passkey-client.js"></script>
   <script src="auth.js"></script>
 </body>
 </html>
