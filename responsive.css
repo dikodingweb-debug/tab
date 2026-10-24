@@ -1,224 +1,130 @@
-@media (max-width: 980px) {
-  .sidebar { width: 220px; padding: 20px 14px; }
-  .main-content { padding: 28px; }
-  .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+/* =========================================================
+   Responsive — laptop > tablet > HP
+   ========================================================= */
+
+/* Laptop kecil / tablet landscape */
+@media (max-width: 1180px) {
+  .main-content { padding: 32px 30px 48px; }
+  .dashboard-grid { grid-template-columns: minmax(0, 1.4fr) minmax(280px, .9fr); gap: 18px; }
 }
 
-@media (max-width: 680px) {
+/* Tablet */
+@media (max-width: 980px) {
+  .sidebar { width: 236px; flex-basis: 236px; padding: 22px 14px; }
+  .main-content { padding: 28px 24px 44px; }
+  .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+  .balance-actions { min-width: 200px; }
+}
+
+/* HP & tablet portrait: sidebar menjadi drawer */
+@media (max-width: 760px) {
   html, body { overflow-x: hidden; }
   .app-shell { display: block; }
 
   .mobile-menu-btn {
-    display: grid;
-    place-items: center;
-    position: fixed;
-    z-index: 80;
-    top: max(12px, env(safe-area-inset-top));
-    left: 14px;
-    width: 44px;
-    height: 44px;
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 14px;
-    background: #0f201b;
-    color: #fff;
-    box-shadow: 0 10px 28px rgba(0,0,0,.16);
-    font-size: 1.25rem;
+    display: grid; place-items: center; position: fixed; z-index: 80;
+    top: max(12px, env(safe-area-inset-top)); left: 14px; width: 46px; height: 46px;
+    border: 1px solid rgba(255,255,255,.14); border-radius: 15px;
+    background: linear-gradient(135deg, #0d4a3b, #072f26); color: #fff;
+    box-shadow: 0 10px 28px rgba(7,47,38,.35); font-size: 1.3rem;
   }
-
   .mobile-nav-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 70;
-    display: none;
-    background: rgba(6,14,11,.52);
-    backdrop-filter: blur(3px);
+    position: fixed; inset: 0; z-index: 70; display: none;
+    background: rgba(4,20,15,.55); backdrop-filter: blur(4px);
   }
   body.mobile-nav-open .mobile-nav-backdrop { display: block; }
+  body.mobile-nav-open .mobile-menu-btn { opacity: 0; pointer-events: none; }
+  .mobile-menu-btn { transition: opacity .2s; }
+  body.mobile-nav-open { overflow: hidden; }
 
   .sidebar {
-    position: fixed;
-    z-index: 75;
-    inset: 0 auto 0 0;
-    width: min(320px, 88vw);
-    height: 100vh;
-    height: 100dvh;
-    padding: 20px 16px max(18px, env(safe-area-inset-bottom));
-    border-radius: 0 24px 24px 0;
-    transform: translateX(-105%);
-    transition: transform .28s ease;
-    box-shadow: 18px 0 50px rgba(0,0,0,.24);
-    align-items: stretch;
-    gap: 24px;
-    overflow-y: auto;
+    position: fixed; z-index: 75; inset: 0 auto 0 0; width: min(320px, 88vw); flex-basis: auto;
+    height: 100vh; height: 100dvh; padding: 20px 16px max(18px, env(safe-area-inset-bottom));
+    border-radius: 0 26px 26px 0; gap: 24px; overflow-y: auto; align-self: auto;
+    transform: translateX(-105%); transition: transform .3s var(--ease);
+    box-shadow: 18px 0 50px rgba(0,0,0,.28);
   }
   body.mobile-nav-open .sidebar { transform: translateX(0); }
-  .mobile-sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .brand { display: flex; }
-  .brand > div:last-child { display: grid; }
-  .mobile-nav-close { display: grid; place-items: center; }
   .mobile-nav-close {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
-    border: 1px solid rgba(255,255,255,.14);
-    border-radius: 12px;
-    background: rgba(255,255,255,.08);
-    color: #fff;
-    font-size: 1.5rem;
-    line-height: 1;
+    display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px;
+    border: 1px solid rgba(255,255,255,.14); border-radius: 13px;
+    background: rgba(255,255,255,.08); color: #fff; font-size: 1.5rem; line-height: 1;
   }
-  .side-nav { display: grid; gap: 8px; }
-  .side-nav .nav-item, .nav-logout {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 58px;
-    height: auto;
-    padding: 10px 12px;
-    border-radius: 15px;
-    font-size: .92rem;
-  }
-  .nav-item > span:last-child { display: grid; gap: 3px; text-align: left; }
-  .nav-item strong { color: #fff; font-size: .9rem; }
-  .nav-item small { color: #a9c0b8; font-size: .72rem; line-height: 1.3; }
-  .nav-icon {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    flex: 0 0 40px;
-    border-radius: 12px;
-    background: rgba(255,255,255,.08);
-    color: #fff;
-    font-size: 1.05rem;
-  }
-  .nav-item.active { background: rgba(255,255,255,.11); }
-  .nav-item.active .nav-icon { background: rgba(255,255,255,.15); }
-  .nav-logout { margin-top: auto; background: rgba(255,255,255,.06); }
+  .nav-item { min-height: 58px; }
+  .nav-item.active::before { left: -16px; }
 
-  .main-content { padding: calc(76px + env(safe-area-inset-top)) 14px max(28px, env(safe-area-inset-bottom)); }
-  .topbar {
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 18px;
-    padding: 0 0 14px;
-  }
-  .topbar > div { min-width: 0; }
-  .topbar h1 { font-size: clamp(1.45rem, 7vw, 1.8rem); }
+  .main-content { padding: calc(74px + env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom)); }
+  .topbar { align-items: flex-start; gap: 10px; margin-bottom: 18px; }
+  .topbar > div { min-width: 0; padding-left: 0; }
+  .topbar h1 { font-size: clamp(1.45rem, 6.5vw, 1.85rem); }
   .topbar .muted { font-size: .88rem; }
-  .notification-trigger { flex: 0 0 44px; width: 44px; height: 44px; }
+  .icon-btn { width: 46px; height: 46px; }
 
-  .balance-card {
-    min-height: 0;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 18px;
-    padding: 20px;
-    margin-bottom: 14px;
-    border-radius: 19px;
-  }
-  .balance-card > div:first-child { min-width: 0; }
-  .balance-value {
-    font-size: clamp(1.65rem, 8vw, 2.15rem);
-    overflow-wrap: anywhere;
-  }
-  .balance-actions { align-items: stretch; width: 100%; min-width: 0; gap: 10px; }
+  .balance-card { min-height: 0; flex-direction: column; align-items: stretch; gap: 20px; padding: 24px 22px; border-radius: 22px; margin-bottom: 14px; }
+  .balance-value { font-size: clamp(1.9rem, 9vw, 2.5rem); overflow-wrap: anywhere; }
+  .balance-actions { align-items: stretch; width: 100%; min-width: 0; }
   .saving-price-label { text-align: left; line-height: 1.4; }
-  .balance-actions .btn { min-height: 46px; }
+  .balance-actions .btn { width: 100%; min-height: 50px; }
 
-  .personal-balance-card {
-    min-height: 0;
-    padding: 18px 20px;
-    margin-bottom: 18px;
-    border-radius: 17px;
-    background: #fff;
-  }
-  .personal-balance-value {
-    font-size: clamp(1.55rem, 7.5vw, 2rem);
-    overflow-wrap: anywhere;
-  }
-  .personal-balance-card .muted { font-size: .8rem; }
+  .personal-balance-card { min-height: 0; padding: 20px 20px 20px 24px; margin-bottom: 16px; border-radius: 20px; }
+  .personal-balance-value { font-size: clamp(1.6rem, 7.5vw, 2.1rem); overflow-wrap: anywhere; }
 
-  .dashboard-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .panel {
-    min-width: 0;
-    padding: 16px 14px;
-    border-radius: 16px;
-  }
-  .panel:hover { transform: none; }
-  .panel-head { align-items: center; gap: 10px; margin-bottom: 14px; }
-  .panel-head > div { min-width: 0; }
-  .panel-head h2 { font-size: 1rem; line-height: 1.35; }
-  .panel-head .btn { flex: 0 0 auto; padding: 9px 11px; }
-  .activity-filters,
-  .approval-panel .activity-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .activity-filters label { min-width: 0; font-size: .68rem; }
-  .activity-filters input { min-width: 0; padding: 9px 7px; font-size: .75rem; }
-  .transaction-list, .pending-list { min-width: 0; }
-  .transaction-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-    padding: 13px 7px;
-  }
-  .transaction-row > div:first-child { min-width: 0; }
-  .transaction-title { overflow-wrap: anywhere; font-size: .88rem; }
-  .transaction-meta { overflow-wrap: anywhere; font-size: .7rem; line-height: 1.45; }
-  .transaction-row .amount { align-self: start; font-size: .8rem; }
-  .pending-item { min-width: 0; padding: 13px 12px; overflow-wrap: anywhere; }
-  .pending-item strong { font-size: .88rem; line-height: 1.4; }
-  .pending-item .amount { font-size: .88rem; }
-  .empty-state, .loading-state { padding: 20px 10px; font-size: .82rem; }
+  .dashboard-grid { gap: 14px; }
+  .panel { padding: 18px 14px; border-radius: 20px; }
+  .panel-head { margin-bottom: 14px; gap: 10px; }
+  .panel-head h2 { font-size: 1.02rem; line-height: 1.35; }
+  .panel-head .btn { padding: 9px 12px; }
+  .activity-filters, .approval-panel .activity-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; }
+  .activity-filters input { padding: 9px 7px; font-size: .76rem; }
+  .transaction-row { gap: 8px; padding: 13px 8px; }
+  .transaction-title { overflow-wrap: anywhere; font-size: .9rem; }
+  .transaction-meta { font-size: .72rem; line-height: 1.45; }
+  .transaction-row .amount { align-self: start; font-size: .84rem; }
+  .pending-item { padding: 13px 14px; overflow-wrap: anywhere; }
 
-  .modal { padding: 12px; }
+  /* Modal menjadi bottom sheet di HP */
+  .modal { padding: 0; place-items: end center; }
   .modal-card {
-    width: 100%;
-    max-height: calc(100vh - 24px);
-    max-height: calc(100dvh - 24px);
-    padding: 22px 18px;
-    border-radius: 20px;
+    width: 100%; max-height: 92vh; max-height: 92dvh; padding: 24px 18px max(22px, env(safe-area-inset-bottom));
+    border-radius: 26px 26px 0 0; animation: sheet .3s var(--ease) both;
   }
-  .modal-card h2 { max-width: calc(100% - 24px); font-size: 1.08rem; line-height: 1.35; }
-  .modal-card .muted { font-size: .86rem; }
-  .modal-close { top: 12px; right: 12px; }
-  .qris-frame { width: min(100%, 260px); }
-  .payment-info { align-items: flex-start; font-size: .76rem; }
-  .payment-info strong { text-align: right; }
-  .detail-line { align-items: flex-start; font-size: .78rem; }
+  .modal-card h2 { max-width: calc(100% - 44px); font-size: 1.12rem; line-height: 1.35; }
+  .qris-card h2 { max-width: 100%; }
+  .qris-frame { width: min(100%, 270px); }
   .detail-line strong { max-width: 62%; text-align: right; overflow-wrap: anywhere; }
-  .approval-actions { gap: 8px; }
-  .approval-actions .btn { padding: 11px 8px; }
+  .approval-actions .btn { padding: 12px 8px; }
 
   .notification-panel {
-    top: max(10px, env(safe-area-inset-top));
-    right: 10px;
-    width: calc(100vw - 20px);
-    max-height: calc(100vh - 20px);
-    max-height: calc(100dvh - 20px);
-    padding: 15px;
-    border-radius: 17px;
+    top: max(10px, env(safe-area-inset-top)); right: 10px; width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); padding: 16px; border-radius: 20px;
   }
   .notification-panel .panel-head { align-items: flex-start; }
-  .notification-panel .panel-head > div:first-child { padding-left: 0; border-left: 0; }
   .notification-head-actions { gap: 5px; }
-  .notification-head-actions .btn-small { padding: 7px 8px; }
-  .notification-delete { min-width: 30px; }
-  .toast {
-    bottom: max(16px, env(safe-area-inset-bottom));
-    max-width: calc(100vw - 24px);
-    line-height: 1.4;
-    text-align: center;
-  }
+  .notification-head-actions .btn-small { padding: 8px 9px; }
+  .toast { bottom: max(18px, env(safe-area-inset-bottom)); text-align: center; line-height: 1.4; }
+
+  .auth-page { padding: 16px; align-items: center; }
+  .auth-card { padding: 30px 22px; border-radius: 24px; }
 }
 
+@keyframes sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* HP kecil */
 @media (max-width: 380px) {
   .main-content { padding-right: 12px; padding-left: 12px; }
-  .balance-card { padding: 17px; }
-  .panel { padding: 14px 12px; }
+  .balance-card { padding: 20px 17px; }
+  .panel { padding: 16px 12px; }
   .activity-filters, .approval-panel .activity-filters { grid-template-columns: minmax(0, 1fr); }
-  .activity-filters label { font-size: .7rem; }
+  .auth-card { padding: 26px 18px; }
+}
+
+/* Layar sangat lebar */
+@media (min-width: 1600px) {
+  .main-content { max-width: 1480px; }
+}
+
+/* Layar pendek (HP landscape) */
+@media (max-height: 520px) and (min-width: 600px) {
+  .auth-page { align-items: start; }
+  .modal-card { max-height: 96vh; }
 }
